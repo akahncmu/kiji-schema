@@ -20,6 +20,7 @@
 package org.kiji.schema.layout.impl;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Multimap;
@@ -73,11 +74,11 @@ public class TestTableLayoutMonitor extends ZooKeeperTest {
             });
 
         layoutTracker.open();
-        final String layout1 = queue.take();
+        final String layout1 = queue.poll(5L, TimeUnit.SECONDS);
         Assert.assertEquals("layout.v1", layout1);
 
         monitor.notifyNewTableLayout(tableURI, Bytes.toBytes("layout.v2"), -1);
-        final String layout2 = queue.take();
+        final String layout2 = queue.poll(5L, TimeUnit.SECONDS);
         Assert.assertEquals("layout.v2", layout2);
 
       } finally {
@@ -116,15 +117,15 @@ public class TestTableLayoutMonitor extends ZooKeeperTest {
             });
         tracker.open();
         try {
-          final Multimap<String, String> umap1 = queue.take();
+          final Multimap<String, String> umap1 = queue.poll(5L, TimeUnit.SECONDS);
           Assert.assertTrue(umap1.isEmpty());
 
           monitor.registerTableUser(tableURI, "user-id-1", "layout-id-1");
-          final Multimap<String, String> umap2 = queue.take();
+          final Multimap<String, String> umap2 = queue.poll(5L, TimeUnit.SECONDS);
           Assert.assertEquals(ImmutableSetMultimap.of("user-id-1", "layout-id-1"), umap2);
 
           monitor.registerTableUser(tableURI, "user-id-1", "layout-id-2");
-          final Multimap<String, String> umap3 = queue.take();
+          final Multimap<String, String> umap3 = queue.poll(5L, TimeUnit.SECONDS);
           Assert.assertEquals(
               ImmutableSetMultimap.of(
                   "user-id-1", "layout-id-1",
@@ -132,7 +133,7 @@ public class TestTableLayoutMonitor extends ZooKeeperTest {
               umap3);
 
           monitor.registerTableUser(tableURI, "user-id-2", "layout-id-1");
-          final Multimap<String, String> umap4 = queue.take();
+          final Multimap<String, String> umap4 = queue.poll(5L, TimeUnit.SECONDS);
           Assert.assertEquals(
               ImmutableSetMultimap.of(
                   "user-id-1", "layout-id-1",
@@ -141,7 +142,7 @@ public class TestTableLayoutMonitor extends ZooKeeperTest {
               umap4);
 
           monitor.unregisterTableUser(tableURI, "user-id-1", "layout-id-1");
-          final Multimap<String, String> umap5 = queue.take();
+          final Multimap<String, String> umap5 = queue.poll(5L, TimeUnit.SECONDS);
           Assert.assertEquals(
               ImmutableSetMultimap.of(
                   "user-id-1", "layout-id-2",
